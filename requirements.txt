@@ -1,0 +1,4 @@
+loguru
+requests
+ipykernel
+python-dotenv
