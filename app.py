@@ -1,20 +1,25 @@
-import os
-from flask import Flask, flash, render_template, redirect, request
-from tasks import add
+# app.py
+import time
+from price_api.coingecko import PriceAPI
+from flask import Flask
+import threading
+
+price_api = PriceAPI(base_url="api.coingecko.com")
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret")
+
+
+def print_hello():
+    while True:
+        print(price_api.get_coin_price("bitcoin"))
+        time.sleep(30)
 
 
 @app.route("/")
-def main():
-    return render_template("main.html")
+def index():
+    return "Hello! The app is running. Check the console for periodic 'hello' messages."
 
 
-@app.route("/add", methods=["POST"])
-def add_inputs():
-    x = int(request.form["x"] or 0)
-    y = int(request.form["y"] or 0)
-    add.delay(x, y)
-    flash("Your addition job has been submitted.")
-    return redirect("/")
+# Start the background thread for printing "hello"
+thread = threading.Thread(target=print_hello, daemon=True)
+thread.start()
