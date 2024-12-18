@@ -15,7 +15,7 @@ def print_hello():
             from price_api.coingecko import PriceAPI
 
             price_api = PriceAPI(base_url="api.coingecko.com")
-            print(price_api.get_coin_price("bitcoin"))
+            logger.info(price_api.get_coin_price("bitcoin"))
 
         except:
             logger.warning("import error")
