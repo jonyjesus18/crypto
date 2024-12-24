@@ -14,19 +14,23 @@ class TiingoAPI(ApiABC):
     def get_prices(self, tickers, start_date, end_date, resample_freq):
         """
         Fetches price data for the given parameters from Tiingo API.
-        :param tickers: Comma-separated string of tickers (e.g., "btcusd,ethusd").
-        :param start_date: Start date for the data in YYYY-MM-DD format.
-        :param end_date: End date for the data in YYYY-MM-DD format.
-        :param resample_freq: Frequency for resampling data (e.g., "5min", "1hour").
-        :return: JSON response containing price data.
 
+        Args:
+            tickers (str): Comma-separated string of tickers (e.g., "btcusd,ethusd").
+            start_date (str): Start date for the data in YYYY-MM-DD format.
+            end_date (str): End date for the data in YYYY-MM-DD format.
+            resample_freq (str): Frequency for resampling data (e.g., "5min", "1hour").
 
-        TiingoAPI().get_prices(
-            tickers='btcusd',
-            start_date='2024-01-01',
-            end_date='2024-02-01',
-            resample_freq='5min'
-        )
+        Returns:
+            dict: JSON response containing price data.
+
+        Example:
+            TiingoAPI().get_prices(
+                tickers='btcusd',
+                start_date='2024-01-01',
+                end_date='2024-02-01',
+                resample_freq='5min'
+            )
         """
 
         params = {

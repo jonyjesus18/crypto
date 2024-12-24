@@ -92,7 +92,7 @@ class MongoDB:
             collection (str): The name of the MongoDB collection.
             start_time (str): The start of the time range in ISO 8601 format.
             end_time (str): The end of the time range in ISO 8601 format.
-            filters (dict, optional): Additional filters for the query.
+            filters (dict, None): Additional filters for the query.
 
         Returns:
             list: A list of documents matching the query.

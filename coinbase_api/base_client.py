@@ -17,6 +17,22 @@ class CoinbaseBaseAPI:
         self.request_host = "api.coinbase.com"
 
     def _build_jwt(self, uri):
+        """
+        Builds a JSON Web Token (JWT) for authentication.
+
+        Args:
+            uri (str): The URI for which the JWT is being generated.
+
+        Returns:
+            str: The generated JWT token.
+
+        Raises:
+            ValueError: If the private key cannot be loaded.
+            jwt.PyJWTError: If there is an error encoding the JWT.
+
+        Note:
+            The JWT is signed using the ES256 algorithm and includes a nonce in the headers.
+        """
         private_key_bytes = self.key_secret.encode("utf-8")  # type: ignore
         private_key = serialization.load_pem_private_key(
             private_key_bytes, password=None
