@@ -5,13 +5,10 @@ from datetime import datetime
 from price_api.api import ApiABC
 
 
-COINGECKO_API_KEY = os.getenv("COINGECKO_API_KEY")
-
-
 class PriceAPI(ApiABC):
     def __init__(self, base_url: str = "api.coingecko.com"):
-        super().__init__(base_url)
-        self.key = COINGECKO_API_KEY
+        self.base_url = base_url
+        self.key = self._get_os_key("COINGECKO_API_KEY")
         self.default_headers = {
             "accept": "application/json",
             "x-cg-demo-api-key": self.key,
