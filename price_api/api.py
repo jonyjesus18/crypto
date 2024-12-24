@@ -1,4 +1,7 @@
 from abc import ABC
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class ApiABC(ABC):
