@@ -35,3 +35,21 @@ def index_slice(df, **kwargs) -> pd.DataFrame:
                 logger.warning(f"No {arg} in {key} level")
 
     return filter_df
+
+
+def collapse_multi_index_cols(df: pd.DataFrame, join_str: str = "_") -> pd.DataFrame:
+    """
+    Collapse the vertical levels of a MultiIndex on the columns by concatenating the column levels.
+
+    Args:
+        df (pd.DataFrame): The DataFrame with a MultiIndex on columns.
+        join_str (str): The string used to join the column index levels.
+
+    Returns:
+        pd.DataFrame: A DataFrame with collapsed MultiIndex columns.
+    """
+    if isinstance(df.columns, pd.MultiIndex):
+        # Collapse the column index levels into a single level by joining with the join_str
+        df.columns = [join_str.join(map(str, col)) for col in df.columns]
+
+    return df
