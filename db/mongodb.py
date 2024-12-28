@@ -144,7 +144,15 @@ class MongoDB:
         end_time_str = end_time_dt.strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
         # Ensure the time range is included in the query (as strings)
-        time_filter = {"datetime": {"$gte": start_time_str, "$lte": end_time_str}}
+        # time_filter = {"datetime": {"$gte": start_time_str, "$lte": end_time_str}}
+        time_filter = {}
+        if start_time_str:
+            time_filter["datetime"] = {"$gte": start_time_str}
+        if end_time_str:
+            if "datetime" in time_filter:
+                time_filter["datetime"]["$lte"] = end_time_str
+            else:
+                time_filter["datetime"] = {"$lte": end_time_str}
 
         # Combine time filter with additional filters
         query = {**filters, **time_filter}
