@@ -1,12 +1,11 @@
-import os
+from functools import lru_cache
 import pandas as pd
 from data_hooks.data_hook import Datahook
 from db.mongodb import MongoDB
 
-DEMO_DATA_PATH = "demo_data"
-
 
 class Tiingo(Datahook):
+    @lru_cache
     def get_data(self, start_date: str, end_date: str | None = None) -> pd.DataFrame:
         raw_data = self.get_raw_data(start_date, end_date)
         pivot_df = self._process_data(raw_data)
@@ -21,6 +20,7 @@ class Tiingo(Datahook):
         )
         return df_pivot
 
+    @lru_cache
     def get_raw_data(self, start_date: str, end_date: str | None) -> pd.DataFrame:
         df = MongoDB().query_timeseries(
             database="prices",

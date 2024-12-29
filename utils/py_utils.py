@@ -1,5 +1,6 @@
 import pandas as pd
 from loguru import logger
+import plotly.graph_objects as go
 
 """
 Miscenallaneous helper classes
@@ -95,10 +96,7 @@ def keep_levels(df: pd.DataFrame, levels_to_keep) -> pd.DataFrame:
     return df
 
 
-import plotly.graph_objects as go
-
-
-def plot_timeseries(df, cols_to_plot=None):
+def plot_timeseries(df: pd.DataFrame, cols_to_plot=None, show_buy=False):
     """
     Plots the timeseries data from a DataFrame using Plotly.
 
@@ -115,18 +113,38 @@ def plot_timeseries(df, cols_to_plot=None):
 
     for col in cols_to_plot:
         # Create the trace for each column
+        if col not in ["buy"]:
+            trace = go.Scatter(
+                x=df.index,
+                y=df[col],
+                mode="lines",
+                name=str(col),  # This joins the gaps
+            )
+            traces.append(trace)
 
-        trace = go.Scatter(
-            x=df.index, y=df[col], mode="lines", name=str(col)  # This joins the gaps
-        )
-        traces.append(trace)
-
+    shapes = []
+    if show_buy and "buy" in df.columns:
+        buy_indices = df.index[df["buy"] == 1]
+        for timestamp in buy_indices:
+            shapes.append(
+                dict(
+                    type="line",
+                    xref="x",
+                    yref="paper",
+                    x0=timestamp,
+                    x1=timestamp,
+                    y0=0,
+                    y1=1,
+                    line=dict(color="green", width=2, dash="dash"),
+                )
+            )
     # Layout for the plot
     layout = go.Layout(
         title="Timeseries Plot",
         xaxis=dict(title="Time"),
         yaxis=dict(title="Value"),
         showlegend=True,
+        shapes=shapes if show_buy else None,
     )
 
     # Create the figure and plot it
