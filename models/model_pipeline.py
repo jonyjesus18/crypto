@@ -1,4 +1,5 @@
 from sklearn.pipeline import Pipeline
+import pandas as pd
 from models.prep_pipeline import PreProcessingPipeline
 
 
@@ -34,4 +35,5 @@ class ModelPipeline(Pipeline):
         X_processed, _ = self.pre_process_pipeline.transform(X, y)
 
         # Make predictions using the model pipeline
-        return super().predict(X_processed)
+        prediction = super().predict(X_processed)
+        return pd.DataFrame(prediction, columns=["prediction"])
