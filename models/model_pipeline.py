@@ -27,7 +27,7 @@ class ModelPipeline(Pipeline):
         # Fit the model pipeline with the processed data
         return super().fit(X_processed, y_processed)
 
-    def predict(self, X, y):
+    def predict(self, X, y, pred_col_name="prediction"):
         """
         First apply the pre-processing pipeline to X, then make predictions using the model.
         """
@@ -36,4 +36,6 @@ class ModelPipeline(Pipeline):
 
         # Make predictions using the model pipeline
         prediction = super().predict(X_processed)
-        return pd.DataFrame(prediction, columns=["prediction"])
+        return pd.DataFrame(
+            prediction, columns=[pred_col_name], index=X_processed.index
+        )

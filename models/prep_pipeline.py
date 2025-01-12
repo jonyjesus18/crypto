@@ -1,7 +1,8 @@
 # The custom PreProcessingPipeline class
 from loguru import logger
-from typing import List, Tuple, Type
+from typing import List, Tuple
 from abc import ABC
+import pandas as pd
 
 
 class PreProcessingStepABC(ABC):
@@ -59,7 +60,7 @@ class PreProcessingPipeline:
         """
         self.steps = steps
 
-    def transform(self, X, y):
+    def transform(self, X, y) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Apply all preprocessing steps to both X and y.
 

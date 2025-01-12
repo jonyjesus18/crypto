@@ -15,27 +15,57 @@ class StrValueEnum:
         return self._enum_class[name].value
 
 
-def index_slice(df, **kwargs) -> pd.DataFrame:
-    filter_df = df.copy()
-    for key, arg in kwargs.items():
-        if isinstance(arg, list):
-            slices_df = pd.DataFrame()
-            for sub_arg in arg:
+def index_slice(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    """
+    Filters a multi-index DataFrame based on the provided key-value pairs using pd.xs.
+
+    Parameters:
+    - df (pd.DataFrame): Input DataFrame with multi-index columns.
+    - **kwargs: Key-value pairs specifying levels and corresponding values to filter.
+      Values can be a single value or a list of values.
+
+    Returns:
+    - pd.DataFrame: Filtered DataFrame.
+    """
+    try:
+        filter_df = df.copy()
+
+        # Ensure columns are a MultiIndex
+        if not isinstance(filter_df.columns, pd.MultiIndex):
+            raise ValueError("The DataFrame must have a MultiIndex for its columns.")
+
+        for level, values in kwargs.items():
+            if not isinstance(values, (list, tuple)):
+                values = [values]
+
+            # Filter columns using pd.xs for each value in the list
+            slices = []
+            for value in values:
                 try:
-                    slice_df: pd.DataFrame = filter_df.xs(sub_arg, level=key, axis=1, drop_level=False)  # type: ignore
-                    slices_df = pd.concat([slices_df, slice_df], axis=1)
+                    slice_df = filter_df.xs(
+                        value, level=level, axis=1, drop_level=False
+                    )
+                    slices.append(slice_df)
+                except KeyError:
+                    logger.warning(f"Value '{value}' not found in level '{level}'.")
 
-                except:
-                    logger.warning(f"No {sub_arg} in {key} level")
+            if not slices:
+                logger.warning(
+                    f"No matching values found for level '{level}'. Returning an empty DataFrame."
+                )
+                return pd.DataFrame()
 
-            filter_df = slices_df
-        else:
-            try:
-                filter_df: pd.DataFrame = filter_df.xs(arg, level=key, axis=1, drop_level=False)  # type: ignore
-            except:
-                logger.warning(f"No {arg} in {key} level")
+            # Concatenate all slices
+            filter_df = pd.concat(slices, axis=1)
 
-    return filter_df
+        return filter_df
+
+    except ValueError as ve:
+        logger.error(f"ValueError: {ve}")
+        return pd.DataFrame()
+    except Exception as e:
+        logger.error(f"An unexpected error occurred during filtering: {e}")
+        return pd.DataFrame()
 
 
 def collapse_multi_index_cols(df: pd.DataFrame, join_str: str = "_") -> pd.DataFrame:
@@ -56,44 +86,41 @@ def collapse_multi_index_cols(df: pd.DataFrame, join_str: str = "_") -> pd.DataF
     return df
 
 
+import pandas as pd
+
+
 def keep_levels(df: pd.DataFrame, levels_to_keep) -> pd.DataFrame:
     """
-    Keeps only the specified levels in a MultiIndex column DataFrame.
+    Retains only the specified levels in the MultiIndex columns of a DataFrame.
 
     Parameters:
-        df (pd.DataFrame): The input DataFrame with MultiIndex columns.
+        df (pd.DataFrame): Input DataFrame with MultiIndex columns.
         levels_to_keep (str or list): A level name or list of level names to retain in the MultiIndex.
 
     Returns:
-        pd.DataFrame: A DataFrame with only the specified levels retained.
+        pd.DataFrame: A DataFrame with only the specified levels retained in the MultiIndex columns.
     """
+    # Ensure the DataFrame has MultiIndex columns
     if not isinstance(df.columns, pd.MultiIndex):
         raise ValueError("The DataFrame does not have MultiIndex columns.")
 
-    # Normalize levels_to_keep to a list if it's a string
+    # Normalize levels_to_keep to a list
     if isinstance(levels_to_keep, str):
         levels_to_keep = [levels_to_keep]
 
     # Validate levels_to_keep
-    invalid_levels = [
-        level for level in levels_to_keep if level not in df.columns.names
-    ]
+    column_levels = df.columns.names
+    invalid_levels = [level for level in levels_to_keep if level not in column_levels]
     if invalid_levels:
         raise ValueError(
-            f"Invalid levels specified: {invalid_levels}. Available levels are: {df.columns.names}"
+            f"Invalid levels specified: {invalid_levels}. Available levels are: {column_levels}"
         )
 
-    # Get index of levels to keep
-    levels_to_keep_idx = [df.columns.names.index(level) for level in levels_to_keep]
-
-    # Reindex the MultiIndex columns
-    new_columns = df.columns.droplevel(
-        [i for i in range(len(df.columns.names)) if i not in levels_to_keep_idx]
+    # Retain only the specified levels
+    retained_columns = df.columns.droplevel(
+        [level for level in column_levels if level not in levels_to_keep]
     )
-    df = df.copy()
-    df.columns = new_columns
-
-    return df
+    return df.copy().set_axis(retained_columns, axis=1)
 
 
 def plot_timeseries(df: pd.DataFrame, cols_to_plot=None, show_buy=False):
