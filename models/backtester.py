@@ -78,6 +78,7 @@ class Portfolio:
         self.cash = initial_capital
         self.total_value = initial_capital
         self.positions: List[Position] = []
+        self.realized_pnls = 0.0
 
     def update_cash(self, amount: float):
         self.cash += amount
@@ -90,6 +91,12 @@ class Portfolio:
 
     def get_total_value(self) -> float:
         return self.total_value
+
+    def get_realized_pnls(self) -> float:
+        return self.realized_pnls
+
+    def add_realized_pnl(self, pnl: float):
+        self.realized_pnls += pnl
 
 
 # 6. Backtester class for running the backtest
@@ -110,7 +117,9 @@ class Backtester:
         self.portfolio = Portfolio(initial_capital)
         self.profit_target = profit_target
         self.stop_loss = stop_loss
-        self.pnl_evolution = pd.DataFrame(columns=["pnl", "date"]).set_index("date")
+        self.pnl_evolution = pd.DataFrame(
+            columns=["realized_pnl", "cumulative_pnl", "date"]
+        ).set_index("date")
 
     def backtest(self) -> dict:
         for i in range(len(self.data_handler.get_data())):
@@ -155,18 +164,30 @@ class Backtester:
 
     def _close_position(self, position: Position, exit_index: int, exit_price: float):
         profit = self.position_manager.close_position(position, exit_price)
+        self.portfolio.add_realized_pnl(profit)
         self.portfolio.update_cash(profit)
         print(
             f"Position closed at index {exit_index} with price {exit_price}, Profit: {profit}"
         )
 
     def _track_pnl(self, index: int):
+        # Track Realized PnL
+        realized_pnl = self.portfolio.get_realized_pnls()
+
+        # Track Cumulative PnL (Realized + Unrealized)
         total_value = self.portfolio.get_total_value()
         for position in self.position_manager.get_open_positions():
             total_value += (
                 position.entry_price * position.size
             )  # Add open position value to total value
-        self.pnl_evolution.loc[index] = total_value
+        cumulative_pnl = total_value - self.portfolio.get_cash() - realized_pnl
+
+        # Store values
+        self.pnl_evolution.loc[index] = {  # type: ignore
+            "realized_pnl": realized_pnl,
+            "cumulative_pnl": cumulative_pnl,
+            "date": self.data_handler.get_data().index[index],
+        }
 
     def _results(self) -> dict:
         return {
@@ -177,18 +198,63 @@ class Backtester:
 
     def plot_pnl_evolution(self):
         fig = go.Figure()
+
+        # Plot Realized PnL
         fig.add_trace(
             go.Scatter(
                 x=self.pnl_evolution.index,
-                y=self.pnl_evolution["pnl"],
+                y=self.pnl_evolution["realized_pnl"],
                 mode="lines",
-                name="PnL Evolution",
+                name="Realized PnL",
             )
         )
+
+        # Plot Cumulative PnL
+        fig.add_trace(
+            go.Scatter(
+                x=self.pnl_evolution.index,
+                y=self.pnl_evolution["cumulative_pnl"],
+                mode="lines",
+                name="Cumulative PnL",
+            )
+        )
+
+        # Add Buy markers (where positions are opened)
+        buy_indices = [
+            position.entry_index
+            for position in self.position_manager.get_open_positions()
+        ]
+        buy_prices = [self.data_handler.get_open(index) for index in buy_indices]
+        fig.add_trace(
+            go.Scatter(
+                x=self.data_handler.get_data().iloc[buy_indices].index,
+                y=buy_prices,
+                mode="markers",
+                marker=dict(symbol="triangle-up", color="green", size=10),
+                name="Buy (Open)",
+            )
+        )
+
+        # Add Sell markers (where positions are closed)
+        sell_indices = [
+            position.entry_index
+            for position in self.position_manager.get_open_positions()
+        ]
+        sell_prices = [self.data_handler.get_open(index) for index in sell_indices]
+        fig.add_trace(
+            go.Scatter(
+                x=self.data_handler.get_data().iloc[sell_indices].index,
+                y=sell_prices,
+                mode="markers",
+                marker=dict(symbol="triangle-down", color="red", size=10),
+                name="Sell (Close)",
+            )
+        )
+
         fig.update_layout(
             title="PnL Evolution",
             xaxis_title="Time (Index)",
-            yaxis_title="Portfolio Value",
+            yaxis_title="PnL",
             template="plotly_dark",
         )
         fig.show()
