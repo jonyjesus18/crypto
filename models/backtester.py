@@ -13,19 +13,19 @@ class DataHandler:
         return self.data
 
     def get_price(self, index: int) -> pd.Series:
-        return self.data.iloc[index]
+        return self.data.loc[index]
 
     def get_high(self, index: int) -> float:
-        return self.data["high"].iloc[index]
+        return self.data["high"].loc[index]
 
     def get_low(self, index: int) -> float:
-        return self.data["low"].iloc[index]
+        return self.data["low"].loc[index]
 
     def get_open(self, index: int) -> float:
-        return self.data["open"].iloc[index]
+        return self.data["open"].loc[index]
 
     def get_close(self, index: int) -> float:
-        return self.data["close"].iloc[index]
+        return self.data["close"].loc[index]
 
 
 # 2. SignalGenerator class for managing signals
@@ -34,7 +34,7 @@ class SignalGenerator:
         self.signal = signal
 
     def get_signal(self, index: int) -> int:
-        return self.signal.iloc[index]
+        return self.signal.loc[index]
 
 
 # 3. Position class to represent each open position
@@ -122,7 +122,8 @@ class Backtester:
         ).set_index("date")
 
     def backtest(self) -> dict:
-        for i in range(len(self.data_handler.get_data())):
+        bt_data = self.data_handler.get_data()
+        for i in bt_data.index:
             print(
                 f"Index {i}: Signal = {self.signal_generator.get_signal(i)}, Cash = {self.portfolio.get_cash()}"
             )
@@ -186,7 +187,6 @@ class Backtester:
         self.pnl_evolution.loc[index] = {  # type: ignore
             "realized_pnl": realized_pnl,
             "cumulative_pnl": cumulative_pnl,
-            "date": self.data_handler.get_data().index[index],
         }
 
     def _results(self) -> dict:

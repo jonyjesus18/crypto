@@ -5,7 +5,10 @@ from models.prep_pipeline import PreProcessingPipeline
 
 class ModelPipeline(Pipeline):
     def __init__(
-        self, pre_process_pipeline: PreProcessingPipeline, steps, verbose=True
+        self,
+        steps,
+        pre_process_pipeline: PreProcessingPipeline | None = None,
+        verbose=True,
     ):
         """
         Initialize the pipeline with a preprocessing pipeline and a regular model pipeline.
@@ -22,20 +25,21 @@ class ModelPipeline(Pipeline):
         First apply the pre-processing pipeline to X and y, then fit the model.
         """
         # Preprocess the data using the preprocessing pipeline
-        X_processed, y_processed = self.pre_process_pipeline.transform(X, y)
+        if self.pre_process_pipeline is not None:
+            X, y = self.pre_process_pipeline.transform(X, y)
 
         # Fit the model pipeline with the processed data
-        return super().fit(X_processed, y_processed)
+        return super().fit(X, y)
 
-    def predict(self, X, y, pred_col_name="prediction"):
+    def predict(self, X: pd.DataFrame, y: pd.DataFrame, pred_col_name="prediction"):
         """
         First apply the pre-processing pipeline to X, then make predictions using the model.
         """
         # Preprocess the data using the preprocessing pipeline
-        X_processed, _ = self.pre_process_pipeline.transform(X, y)
+
+        if self.pre_process_pipeline is not None:
+            X, y = self.pre_process_pipeline.transform(X.copy(), y.copy())
 
         # Make predictions using the model pipeline
-        prediction = super().predict(X_processed)
-        return pd.DataFrame(
-            prediction, columns=[pred_col_name], index=X_processed.index
-        )
+        prediction = super().predict(X)
+        return pd.DataFrame(prediction, columns=[pred_col_name], index=X.index)
