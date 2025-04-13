@@ -1,31 +1,34 @@
 from dataclasses import dataclass
+from datetime import datetime
 import pandas as pd
+from pandas import Series, DataFrame, DatetimeIndex
 import plotly.graph_objects as go
-from typing import List
+from typing import List, Union, cast
 
 
 # 1. DataHandler class for managing data
 class DataHandler:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: DataFrame):
         self.data = data
+        self.index = cast(DatetimeIndex, data.index)
 
-    def get_data(self) -> pd.DataFrame:
+    def get_data(self) -> DataFrame:
         return self.data
 
-    def get_price(self, index: int) -> pd.Series:
-        return self.data.loc[index]
+    def get_price(self, index: datetime) -> Series:
+        return cast(Series, self.data.loc[index])
 
-    def get_high(self, index: int) -> float:
-        return self.data["high"].loc[index]
+    def get_high(self, index: Union[int, datetime]) -> float:
+        return float(self.data["high"].loc[index])
 
-    def get_low(self, index: int) -> float:
-        return self.data["low"].loc[index]
+    def get_low(self, index: Union[int, datetime]) -> float:
+        return float(self.data["low"].loc[index])
 
-    def get_open(self, index: int) -> float:
-        return self.data["open"].loc[index]
+    def get_open(self, index: Union[int, datetime]) -> float:
+        return float(self.data["open"].loc[index])
 
-    def get_close(self, index: int) -> float:
-        return self.data["close"].loc[index]
+    def get_close(self, index: Union[int, datetime]) -> float:
+        return float(self.data["close"].loc[index])
 
 
 # 2. SignalGenerator class for managing signals
@@ -111,8 +114,9 @@ class Backtester:
         stop_loss=0.02,
         fee=0.0015,
     ):
-        self.data_handler = DataHandler(data)
-        self.signal_generator = SignalGenerator(signal)
+        aligned_data, aligned_signal = data.align(signal, join="inner", axis=0)
+        self.data_handler = DataHandler(aligned_data)
+        self.signal_generator = SignalGenerator(aligned_signal)
         self.position_manager = PositionManager(max_positions, fee)
         self.portfolio = Portfolio(initial_capital)
         self.profit_target = profit_target

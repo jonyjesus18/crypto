@@ -8,17 +8,21 @@ from loguru import logger
 
 class Tiingo(Datahook):
     def __init__(self):
+        super().__init__()  # Initialize Redis from parent class
         self.db = TimescaleDB()
 
-    @lru_cache
+    @Datahook.cache_df(ttl=3600)
     def get_data(
-        self, start_date: str = "2024-06-01", end_date: Optional[str] = None
+        self,
+        start_date: str = "2024-06-01",
+        end_date: Optional[str] = None,
+        cache: bool = True,
     ) -> pd.DataFrame:
         """Get processed data from Tiingo."""
         raw_data = self.get_raw_data(start_date, end_date)
         return self._process_data(raw_data)
 
-    @lru_cache
+    @lru_cache(maxsize=128)
     def get_raw_data(
         self, start_date: str, end_date: Optional[str] = None
     ) -> pd.DataFrame:

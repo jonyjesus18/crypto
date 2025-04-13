@@ -1,3 +1,4 @@
+from typing import cast
 import pandas as pd
 from loguru import logger
 import plotly.graph_objects as go
@@ -56,8 +57,7 @@ def index_slice(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
                 return pd.DataFrame()
 
             # Concatenate all slices
-            filter_df = pd.concat(slices, axis=1)
-
+            filter_df: pd.DataFrame = pd.concat(slices, axis=1)
         return filter_df
 
     except ValueError as ve:
